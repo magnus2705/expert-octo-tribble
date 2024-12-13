@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      .slider {
+        -webkit-appearance: none;
+        width: 322px;
+        height: 15px;
+        border-radius: 5px;
+        background: #d3d3d3;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #04aa6d;
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-thumb {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #04aa6d;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Chart</h1>
+    <canvas
+      id="canvas"
+      width="700"
+      height="500"
+      style="border: 0px solid black"
+    ></canvas>
+
+    <div class="slidecontainer">
+      <input
+        style="margin-left: 150px"
+        type="range"
+        min="0"
+        max="322"
+        value="0"
+        class="slider"
+        id="myRange"
+      />
+    </div>
+
+    <script>
+      // Sequence generator function
+      // (commonly referred to as "range", e.g. Clojure, PHP etc)
+      const range = (start, stop, step) =>
+        Array.from(
+          { length: (stop - start) / step + 1 },
+          (_, i) => start + i * step
+        );
+
+      const rangeX = range(0, 100, 10);
+      const rangeY = range(0, 100, 10);
+
+      let posX = 0;
+
+      function draw() {
+        const canvas = document.getElementById("canvas");
+        if (canvas.getContext) {
+          const ctx = canvas.getContext("2d");
+
+          const width = 400;
+          const height = 400;
+          const offsetX = 150;
+          const offsetY = 20;
+
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+          ctx.fillStyle = "lightgray";
+          ctx.fillRect(offsetX, offsetY, width, height);
+          ctx.fillStyle = "black";
+
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 7; i++) {
+            ctx.beginPath();
+            ctx.moveTo(offsetX + i * (width / 6), offsetY);
+            ctx.lineTo(offsetX + i * (width / 6), offsetY + height);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY + i * (height / 6));
+            ctx.lineTo(offsetX + width, offsetY + i * (height / 6));
+            ctx.stroke();
+          }
+
+          const xval = range(0, width, 1);
+          // Fw
+          ctx.beginPath();
+          ctx.moveTo(offsetX + 322, offsetY + height);
+          ctx.lineTo(offsetX, offsetY + height);
+          for (let i = 1; i <= width; i++) {
+            // yval = 2.2 * xval[i] - (1 / 350) * xval[i] * xval[i];
+            // yval = 1.9 * xval[i] - (1 / 430) * xval[i] * xval[i];
+            yval = 2.1 * xval[i] - (1 / 360) * xval[i] * xval[i];
+            ctx.lineTo(offsetX + xval[i], offsetY + height - yval);
+            if (i >= 322) {
+              break;
+            }
+          }
+          // ctx.lineTo(offsetX + 322, offsetY + height);
+          ctx.fillStyle = "orange";
+          ctx.globalAlpha = 0.6;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.stroke();
+
+          // Fc
+          ctx.beginPath();
+          ctx.moveTo(offsetX, offsetY + height);
+          for (let i = 1; i <= width; i++) {
+            // yval = 0.0065 * xval[i] * (265 *- xval[i]);
+            yval = 0.004 * xval[i] * (265 - xval[i]);
+            if (yval < 0) {
+              yval = 0;
+            }
+            ctx.lineTo(offsetX + xval[i], offsetY + height - yval);
+            if (yval <= 0) {
+              break;
+            }
+          }
+          ctx.fillStyle = "lightgreen";
+          ctx.globalAlpha = 0.6;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.stroke();
+
+          // RoP
+          ctx.beginPath();
+          for (let i = 0; i <= width; i++) {
+            if (i >= 300) {
+              break;
+            }
+            yval = 320 + 5000 / (xval[i] - 300);
+            if (i == 0) {
+              ctx.moveTo(offsetX + xval[i], offsetY + height - yval);
+            } else {
+              if (yval < 0) {
+                yval = 0;
+              }
+              ctx.lineTo(offsetX + xval[i], offsetY + height - yval);
+              if (yval <= 0) {
+                break;
+              }
+            }
+          }
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = "blue";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([10, 4]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = "black";
+
+          // left side text
+          ctx.fillStyle = "black";
+          ctx.font = "12px serif";
+          ctx.textAlign = "end";
+          ctx.textBaseline = "middle";
+          ctx.fillText("6000 ", offsetX, offsetY);
+          ctx.fillText("4000 ", offsetX, offsetY + (height * 2) / 6);
+          ctx.fillText("2000 ", offsetX, offsetY + (height * 4) / 6);
+
+          ctx.font = "14px serif";
+          ctx.fillText("Available Torque ", offsetX - 40, offsetY + 12);
+          ctx.beginPath();
+          ctx.moveTo(offsetX - 40, offsetY + 12);
+          ctx.lineTo(offsetX + 322, offsetY + 12);
+          ctx.setLineDash([5, 2]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.fillText("Bit Torque", offsetX - 40, offsetY + 600 / 3);
+          ctx.fillText("(Tb) ftlbs", offsetX - 40, offsetY + 600 / 3 + 16);
+
+          //right side text
+          ctx.textAlign = "start";
+          ctx.fillStyle = "blue";
+          ctx.font = "12px serif";
+          ctx.fillText(" 200", offsetX + width, offsetY);
+          ctx.fillText(" 100", offsetX + width, offsetY + height / 2);
+          ctx.fillText(" 0", offsetX + width, offsetY + height);
+
+          ctx.font = "14px serif";
+          ctx.fillText("Bit RPM", offsetX + width + 20, offsetY + 120);
+          ctx.fillText("(rev/min)", offsetX + width + 20, offsetY + 120 + 12);
+
+          //bot side text
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillStyle = "black";
+          ctx.font = "12px serif";
+          ctx.fillText("10k", offsetX + width / 6, offsetY + height + 5);
+          ctx.fillText("20k", offsetX + (width * 2) / 6, offsetY + height + 5);
+          ctx.fillText("30k", offsetX + (width * 3) / 6, offsetY + height + 5);
+          ctx.fillText("40k", offsetX + (width * 4) / 6, offsetY + height + 5);
+          ctx.fillText("50k", offsetX + (width * 5) / 6, offsetY + height + 5);
+
+          ctx.font = "20px serif";
+          ctx.fillText(
+            "Weight on Bit (W) lbs",
+            offsetX + (width * 3) / 6,
+            offsetY + height + 30
+          );
+
+          // middle text
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillStyle = "black";
+          ctx.font = "20px serif";
+          ctx.fillText(
+            "Wearflat Friction (Fw)",
+            offsetX + (width * 2.5) / 6,
+            offsetY + (height * 4.1) / 6
+          );
+
+          ctx.fillText(
+            "Cutting Force (Fc)",
+            offsetX + (width * 2.1) / 6,
+            offsetY + (height * 5.5) / 6
+          );
+
+          ctx.textAlign = "start";
+          ctx.textBaseline = "middle";
+          ctx.font = "14px serif";
+          let textlen = ctx.measureText("Heat, Wear, and Vibrations");
+
+          ctx.clearRect(
+            offsetX + width - 25 - 6,
+            offsetY + 40 - 14 / 2 - 5,
+            textlen.width + 6 * 2,
+            14 + 5 * 2
+          );
+          ctx.strokeRect(
+            offsetX + width - 25 - 6,
+            offsetY + 40 - 14 / 2 - 5,
+            textlen.width + 6 * 2,
+            14 + 5 * 2
+          );
+
+          ctx.fillText(
+            "Heat, Wear, and Vibrations",
+            offsetX + width - 25,
+            offsetY + 40
+          );
+
+          ctx.beginPath();
+          ctx.moveTo(offsetX + 315, offsetY + 50);
+          ctx.lineTo(offsetX + width - 28, offsetY + 40);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.lineWidth = 1;
+
+          textlen = ctx.measureText("Stall");
+          ctx.clearRect(
+            offsetX + width - 25 - 6,
+            offsetY + height - 70 - 14 / 2 - 5,
+            textlen.width + 6 * 2,
+            14 + 5 * 2
+          );
+          ctx.strokeRect(
+            offsetX + width - 25 - 6,
+            offsetY + height - 70 - 14 / 2 - 5,
+            textlen.width + 6 * 2,
+            14 + 5 * 2
+          );
+          ctx.fillText("Stall", offsetX + width - 25, offsetY + height - 70);
+          ctx.beginPath();
+          ctx.moveTo(offsetX + 283, offsetY + height - 32);
+          ctx.lineTo(offsetX + width - 28, offsetY + height - 70);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.lineWidth = 1;
+
+          // Fw dot
+          ctx.beginPath();
+          // if (posX >= 295) {
+          //   ctx.arc(offsetX + 295, offsetY, 5, 0, 360, false);
+          // } else {
+          //   yval = 2.2 * posX - (1 / 350) * posX * posX;
+          //   ctx.arc(offsetX + posX, offsetY + height - yval, 5, 0, 360, false);
+          // }
+          // yval = 1.9 * posX - (1 / 430) * posX * posX;
+          if (posX >= 322) {
+            ctx.arc(offsetX + 322, offsetY + 11.81, 5, 0, 360, false);
+          } else {
+            yval = 2.1 * posX - (1 / 360) * posX * posX;
+            ctx.arc(offsetX + posX, offsetY + height - yval, 5, 0, 360, false);
+          }
+          ctx.fillStyle = "red";
+          ctx.globalAlpha = 1;
+          ctx.fill();
+
+          // Fc dot
+          ctx.beginPath();
+          if (posX >= 266) {
+            ctx.arc(offsetX + 266, offsetY + height, 5, 0, 360, false);
+          } else {
+            yval = 0.004 * posX * (265 - posX);
+            ctx.arc(offsetX + posX, offsetY + height - yval, 5, 0, 360, false);
+          }
+          ctx.fill();
+
+          // RoP dot
+          ctx.beginPath();
+          if (posX >= 285) {
+            ctx.arc(offsetX + 285, offsetY + height, 5, 0, 360, false);
+          } else {
+            yval = 320 + 5000 / (posX - 300);
+            ctx.arc(offsetX + posX, offsetY + height - yval, 5, 0, 360, false);
+          }
+          ctx.fillStyle = "blue";
+          ctx.fill();
+          ctx.fillStyle = "red";
+        }
+      }
+
+      window.addEventListener("load", draw);
+
+      var slider = document.getElementById("myRange");
+
+      // Update the current slider value (each time you drag the slider handle)
+      slider.oninput = function () {
+        posX = parseInt(this.value);
+        draw();
+      };
+    </script>
+  </body>
+</html>
